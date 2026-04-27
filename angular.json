@@ -35,9 +35,7 @@
           "configurations": {
             "production": {
               "optimization": true,
-              "aot": true,
               "sourceMap": false,
-              "vendorChunk": false,
               "outputHashing": "all",
               "budgets": [
                 {
