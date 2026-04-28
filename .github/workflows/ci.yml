@@ -79,4 +79,6 @@ jobs:
           aws ecs update-service \
             --cluster project-cicd-cluster \
             --service project-cicd-service \
-            --force-new-deployment
+            --task-definition project-cicd-task \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
