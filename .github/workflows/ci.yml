@@ -36,6 +36,8 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    outputs:
+      image: ${{ steps.set-image.outputs.image }}
 
     steps:
       - name: Checkout code
@@ -53,13 +55,14 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image
+        id: set-image
         run: |
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
           IMAGE=$ECR_REGISTRY/${{ secrets.ECR_REPOSITORY }}
           docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
-          echo "Image pushed: $IMAGE:${{ github.sha }}"
+          echo "image=$IMAGE:${{ github.sha }}" >> $GITHUB_OUTPUT
 
   deploy:
     needs: docker-build-push
@@ -86,7 +89,7 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: project-cicd-container
-          image: 242668811507.dkr.ecr.ap-southeast-2.amazonaws.com/project-cicd:${{ github.sha }}
+          image: ${{ needs.docker-build-push.outputs.image }}
 
       - name: Deploy new task definition to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
