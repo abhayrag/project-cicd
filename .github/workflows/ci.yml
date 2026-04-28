@@ -65,9 +65,11 @@ jobs:
           echo "image=$IMAGE:${{ github.sha }}" >> $GITHUB_OUTPUT
 
   deploy:
-    needs: docker-build-push
+    needs: [docker-build-push]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    env:
+      IMAGE: ${{ needs.docker-build-push.outputs.image }}
 
     steps:
       - name: Configure AWS credentials
