@@ -74,11 +74,24 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy to ECS
+      - name: Download task definition
         run: |
-          aws ecs update-service \
-            --cluster project-cicd-cluster \
-            --service project-cicd-service \
+          aws ecs describe-task-definition \
             --task-definition project-cicd-task \
-            --force-new-deployment \
-            --region ${{ secrets.AWS_REGION }}
+            --query taskDefinition > task-definition.json
+
+      - name: Update ECS task definition with new image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: project-cicd-container
+          image: 242668811507.dkr.ecr.ap-southeast-2.amazonaws.com/project-cicd:${{ github.sha }}
+
+      - name: Deploy new task definition to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: project-cicd-service
+          cluster: project-cicd-cluster
+          wait-for-service-stability: true
